@@ -4,6 +4,7 @@ import player from './assets/mario.png'
 import bushes from './assets/bushes.png'
 import clouds from './assets/clouds.png'
 import brick from './assets/brick.png'
+import special from './assets/special.png'
 
 const gameState = {
   score: 0
@@ -20,6 +21,7 @@ class Level extends Phaser.Scene {
     this.load.image('ground', ground)
     this.load.image('brick', brick)
     this.load.spritesheet('player', player, { frameWidth: 32, frameHeight: 34 })
+    this.load.spritesheet('special', special, { frameWidth: 16, frameHeight: 16 })
   }
 
   create() {
@@ -33,15 +35,16 @@ class Level extends Phaser.Scene {
 
     gameState.ground = this.physics.add.staticGroup()
     gameState.player = this.physics.add.sprite(50, 180, 'player')
+    gameState.special = this.physics.add.staticGroup()
     gameState.brick = this.physics.add.staticGroup()
 
     this.physics.add.collider(gameState.player, gameState.ground)
     this.physics.add.collider(gameState.player, gameState.brick, function(_player, _brick) {
       if (gameState.player.body.touching.up) {
         _brick.destroy()
+        gameState.player.setVelocityY(0)
       }
 
-      gameState.player.setVelocityY(0)
     })
 
     this.createAnimations()
@@ -55,6 +58,8 @@ class Level extends Phaser.Scene {
     gameState.player.setCollideWorldBounds(true)
 
     gameState.cursors = this.input.keyboard.createCursorKeys();
+
+    console.log(gameState)
   }
 
   createGround (xIndex, yIndex) {
@@ -74,6 +79,12 @@ class Level extends Phaser.Scene {
       .refreshBody()
   }
 
+  createSpecial (xIndex, yIndex) {
+    gameState.special.create(xIndex, yIndex, 'special')
+    .setOrigin(0, 0)
+    .refreshBody()
+  }
+
   levelSetup () {
     for (const [xIndex, yIndex] of this.ground.entries()) {
       this.createGround(xIndex, yIndex)
@@ -82,14 +93,16 @@ class Level extends Phaser.Scene {
     for (const [i, pos] of this.brick.entries()) {
       this.createBrick(pos.x, pos.y)
     }
+
+    for (const [i, pos] of this.special.entries()) {
+      this.createSpecial(pos.x, pos.y)
+    }
   }
 
   createAnimations () {
     this.anims.create({
       key: 'idle',
       frames: this.anims.generateFrameNumbers('player', {start: 5, end: 5 }),
-      frameRate: 1,
-      repeat: -1
     })
 
     this.anims.create({
@@ -102,6 +115,13 @@ class Level extends Phaser.Scene {
     this.anims.create({
       key: 'jump',
       frames: this.anims.generateFrameNumbers('player', { start: 0, end: 0 })
+    })
+
+    this.anims.create({
+      key: 'flash',
+      frames: this.anims.generateFrameNumbers('special', {start: 0, end: 1}),
+      frameRate: 10,
+      repeat: -1
     })
   }
 
@@ -121,13 +141,14 @@ class Level extends Phaser.Scene {
 
     if (Phaser.Input.Keyboard.JustDown(gameState.cursors.space) && gameState.player.body.touching.down) {
       gameState.player.anims.play('jump', true)
-      gameState.player.setVelocityY(-220)
+      gameState.player.setVelocityY(-200)
     }
 
     if (!gameState.player.body.touching.down) {
       gameState.player.anims.play('jump', true)
     }
 
+    // gameState.special.anims.play('flash', true)
   }
 }
 
