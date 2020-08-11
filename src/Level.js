@@ -1,6 +1,9 @@
 import Phaser from 'phaser'
-import ground from './assets/block.png'
+import ground from './assets/ground.png'
 import player from './assets/mario.png'
+import bushes from './assets/bushes.png'
+import clouds from './assets/clouds.png'
+import brick from './assets/brick.png'
 
 const gameState = {
   score: 0
@@ -12,22 +15,41 @@ class Level extends Phaser.Scene {
   }
 
   preload() {
+    this.load.image('bushes', bushes)
+    this.load.image('clouds', clouds)
     this.load.image('ground', ground)
+    this.load.image('brick', brick)
     this.load.spritesheet('player', player, { frameWidth: 32, frameHeight: 34 })
   }
 
   create() {
+    for (let x = 0; x < 5; x++) {
+      this.add.image(x * 766, 160, 'bushes').setOrigin(0, 0)
+    }
+
+    for (let x = 0; x < 8; x++) {
+      this.add.image(x * 768,  16, 'clouds').setOrigin(0, 0)
+    }
+
     gameState.ground = this.physics.add.staticGroup()
-    gameState.player = this.physics.add.sprite(400, 400, 'player')
+    gameState.player = this.physics.add.sprite(50, 180, 'player')
+    gameState.brick = this.physics.add.staticGroup()
 
     this.physics.add.collider(gameState.player, gameState.ground)
+    this.physics.add.collider(gameState.player, gameState.brick, function(_player, _brick) {
+      if (gameState.player.body.touching.up) {
+        _brick.destroy()
+      }
+
+      gameState.player.setVelocityY(0)
+    })
 
     this.createAnimations()
 
     this.levelSetup()
 
-    this.cameras.main.setBounds(0, 0, 3312, 600)
-    this.physics.world.setBounds(0, 0, 3312, 600)
+    this.cameras.main.setBounds(0, 0, 3312, 240)
+    this.physics.world.setBounds(0, 0, 3312, 240)
     this.cameras.main.startFollow(gameState.player, true, 0.5, 0.5)
 
     gameState.player.setCollideWorldBounds(true)
@@ -37,18 +59,28 @@ class Level extends Phaser.Scene {
 
   createGround (xIndex, yIndex) {
     if (typeof xIndex === 'number' && typeof yIndex === 'number') {
-      gameState.ground.create((xIndex * 16), yIndex * 568, 'ground')
+      gameState.ground.create((xIndex * 16), yIndex * 208, 'ground')
         .setOrigin(0, 0)
         .refreshBody()
-      gameState.ground.create((xIndex * 16), yIndex * 584, 'ground')
+      gameState.ground.create((xIndex * 16), yIndex * 224, 'ground')
       .setOrigin(0, 0)
       .refreshBody()
     }
   }
 
+  createBrick (xIndex, yIndex) {
+    gameState.brick.create(xIndex, yIndex, 'brick')
+      .setOrigin(0, 0)
+      .refreshBody()
+  }
+
   levelSetup () {
     for (const [xIndex, yIndex] of this.ground.entries()) {
       this.createGround(xIndex, yIndex)
+    }
+
+    for (const [i, pos] of this.brick.entries()) {
+      this.createBrick(pos.x, pos.y)
     }
   }
 
@@ -89,7 +121,7 @@ class Level extends Phaser.Scene {
 
     if (Phaser.Input.Keyboard.JustDown(gameState.cursors.space) && gameState.player.body.touching.down) {
       gameState.player.anims.play('jump', true)
-      gameState.player.setVelocityY(-150)
+      gameState.player.setVelocityY(-220)
     }
 
     if (!gameState.player.body.touching.down) {
