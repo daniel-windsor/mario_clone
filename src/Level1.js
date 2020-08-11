@@ -1,4 +1,3 @@
-import Phaser from 'phaser'
 import Level from './Level'
 
 class Level1 extends Level {
@@ -55,7 +54,6 @@ class Level1 extends Level {
       {x: 2720, y: 144},
     ]
   }
-
 }
 
 export default Level1

@@ -39,9 +39,17 @@ class Level extends Phaser.Scene {
     gameState.brick = this.physics.add.staticGroup()
 
     this.physics.add.collider(gameState.player, gameState.ground)
+    
     this.physics.add.collider(gameState.player, gameState.brick, function(_player, _brick) {
       if (gameState.player.body.touching.up) {
         _brick.destroy()
+        gameState.player.setVelocityY(0)
+      }
+    })
+
+    this.physics.add.collider(gameState.player, gameState.special, function(_player, _special) {
+      if (gameState.player.body.touching.up) {
+        _special.destroy()
         gameState.player.setVelocityY(0)
       }
 
@@ -141,14 +149,12 @@ class Level extends Phaser.Scene {
 
     if (Phaser.Input.Keyboard.JustDown(gameState.cursors.space) && gameState.player.body.touching.down) {
       gameState.player.anims.play('jump', true)
-      gameState.player.setVelocityY(-200)
+      gameState.player.setVelocityY(-275)
     }
 
     if (!gameState.player.body.touching.down) {
       gameState.player.anims.play('jump', true)
     }
-
-    // gameState.special.anims.play('flash', true)
   }
 }
 
