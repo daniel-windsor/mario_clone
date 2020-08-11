@@ -8,6 +8,7 @@ import brick2 from './assets/brick2.png'
 import special from './assets/special.png'
 import pipe from './assets/pipe.png'
 import castle from './assets/castle.png'
+import flag from './assets/flag.png'
 
 const gameState = {
   score: 0
@@ -25,6 +26,7 @@ class Level extends Phaser.Scene {
     this.load.image('brick', brick)
     this.load.image('brick2', brick2)
     this.load.image('pipe', pipe)
+    this.load.image('flag', flag)
     this.load.image('castle', castle)
     this.load.spritesheet('player', player, { frameWidth: 32, frameHeight: 34 })
     this.load.spritesheet('special', special, { frameWidth: 16, frameHeight: 16 })
@@ -39,10 +41,11 @@ class Level extends Phaser.Scene {
       this.add.image(x * 768,  16, 'clouds').setOrigin(0, 0)
     }
 
+    this.add.image(3172, 124, 'flag')
     this.add.image(3232, 128, 'castle').setOrigin(0, 0)
 
     gameState.ground = this.physics.add.staticGroup()
-    gameState.player = this.physics.add.sprite(50, 180, 'player')
+    gameState.player = this.physics.add.sprite(100, 180, 'player')
     gameState.special = this.physics.add.staticGroup()
     gameState.brick = this.physics.add.staticGroup()
     gameState.pipe = this.physics.add.staticGroup()
@@ -56,6 +59,8 @@ class Level extends Phaser.Scene {
         gameState.player.setVelocityY(0)
       }
     })
+
+    this.physics.add.collider(gameState.player, gameState.pyramid)
 
     this.physics.add.collider(gameState.player, gameState.special, function(_player, _special) {
       if (gameState.player.body.touching.up) {
