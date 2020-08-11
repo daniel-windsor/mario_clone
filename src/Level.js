@@ -9,6 +9,7 @@ import special from './assets/special.png'
 import pipe from './assets/pipe.png'
 import castle from './assets/castle.png'
 import flag from './assets/flag.png'
+import goomba from './assets/goomba.png'
 
 const gameState = {
   score: 0
@@ -28,8 +29,12 @@ class Level extends Phaser.Scene {
     this.load.image('pipe', pipe)
     this.load.image('flag', flag)
     this.load.image('castle', castle)
+
     this.load.spritesheet('player', player, { frameWidth: 32, frameHeight: 34 })
     this.load.spritesheet('special', special, { frameWidth: 16, frameHeight: 16 })
+
+    this.load.spritesheet('goomba', goomba, { frameWidth: 26, frameHeight: 18 })
+
   }
 
   create() {
@@ -44,6 +49,8 @@ class Level extends Phaser.Scene {
     this.add.image(3172, 124, 'flag')
     this.add.image(3232, 128, 'castle').setOrigin(0, 0)
 
+    gameState.scenery = this.physics.add.staticGroup()
+
     gameState.ground = this.physics.add.staticGroup()
     gameState.player = this.physics.add.sprite(100, 180, 'player')
     gameState.special = this.physics.add.staticGroup()
@@ -51,7 +58,26 @@ class Level extends Phaser.Scene {
     gameState.pipe = this.physics.add.staticGroup()
     gameState.pyramid = this.physics.add.staticGroup()
 
-    this.physics.add.collider(gameState.player, gameState.ground)
+    gameState.goombas = this.physics.add.group({
+      velocityX: -50,
+      bounceX: 1,
+      collideWorldBounds: true
+    })
+
+
+    this.physics.add.collider(gameState.player, gameState.scenery)
+    this.physics.add.collider(gameState.goombas, gameState.scenery)
+
+    this.physics.add.collider(gameState.player, gameState.goombas, (_player, _goomba) => {
+      if (_player.body.touching.left || _player.body.touching.right) {
+        this.scene.restart()
+      }
+
+      if (_player.body.touching.down || _goomba.body.touching.up) {
+        _player.setVelocityY(-150)
+        _goomba.destroy()
+      }
+    }) 
     
     this.physics.add.collider(gameState.player, gameState.brick, function(_player, _brick) {
       if (gameState.player.body.touching.up) {
@@ -60,14 +86,11 @@ class Level extends Phaser.Scene {
       }
     })
 
-    this.physics.add.collider(gameState.player, gameState.pyramid)
-
     this.physics.add.collider(gameState.player, gameState.special, function(_player, _special) {
       if (gameState.player.body.touching.up) {
         _special.destroy()
         gameState.player.setVelocityY(0)
       }
-
     })
 
     this.createAnimations()
@@ -81,15 +104,18 @@ class Level extends Phaser.Scene {
 
     gameState.player.setCollideWorldBounds(true)
 
+    gameState.goombas.playAnimation('goombaWalk', true)
+
+
     gameState.cursors = this.input.keyboard.createCursorKeys();
   }
 
   createGround (xIndex, yIndex) {
     if (typeof xIndex === 'number' && typeof yIndex === 'number') {
-      gameState.ground.create((xIndex * 16), yIndex * 208, 'ground')
+      gameState.scenery.create((xIndex * 16), yIndex * 208, 'ground')
         .setOrigin(0, 0)
         .refreshBody()
-      gameState.ground.create((xIndex * 16), yIndex * 224, 'ground')
+      gameState.scenery.create((xIndex * 16), yIndex * 224, 'ground')
       .setOrigin(0, 0)
       .refreshBody()
     }
@@ -108,15 +134,20 @@ class Level extends Phaser.Scene {
   }
 
   createPipe (xIndex, yIndex) {
-    gameState.special.create(xIndex, yIndex, 'pipe')
+    gameState.scenery.create(xIndex, yIndex, 'pipe')
     .setOrigin(0, 0)
     .refreshBody()
   }
 
   createPyramid (xIndex, yIndex) {
-    gameState.pyramid.create(xIndex, yIndex, 'brick2')
+    gameState.scenery.create(xIndex, yIndex, 'brick2')
     .setOrigin(0, 0)
     .refreshBody()
+  }
+
+  createGoomba (xIndex, yIndex) {
+    gameState.goombas.create(xIndex, yIndex, 'goomba')
+      .setOrigin(0, 0)
   }
 
   levelSetup () {
@@ -160,6 +191,10 @@ class Level extends Phaser.Scene {
       }
     }
 
+    for (const [i, pos] of this.goomba.entries()) {
+      this.createGoomba(pos.x, pos.y)
+    }
+
   }
 
   createAnimations () {
@@ -184,6 +219,13 @@ class Level extends Phaser.Scene {
       key: 'flash',
       frames: this.anims.generateFrameNumbers('special', {start: 0, end: 1}),
       frameRate: 10,
+      repeat: -1
+    })
+
+    this.anims.create({
+      key: 'goombaWalk',
+      frames: this.anims.generateFrameNumbers('goomba', {start: 0, end: 1}),
+      frameRate: 6,
       repeat: -1
     })
   }
