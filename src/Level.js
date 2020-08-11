@@ -4,7 +4,10 @@ import player from './assets/mario.png'
 import bushes from './assets/bushes.png'
 import clouds from './assets/clouds.png'
 import brick from './assets/brick.png'
+import brick2 from './assets/brick2.png'
 import special from './assets/special.png'
+import pipe from './assets/pipe.png'
+import castle from './assets/castle.png'
 
 const gameState = {
   score: 0
@@ -20,6 +23,9 @@ class Level extends Phaser.Scene {
     this.load.image('clouds', clouds)
     this.load.image('ground', ground)
     this.load.image('brick', brick)
+    this.load.image('brick2', brick2)
+    this.load.image('pipe', pipe)
+    this.load.image('castle', castle)
     this.load.spritesheet('player', player, { frameWidth: 32, frameHeight: 34 })
     this.load.spritesheet('special', special, { frameWidth: 16, frameHeight: 16 })
   }
@@ -33,10 +39,14 @@ class Level extends Phaser.Scene {
       this.add.image(x * 768,  16, 'clouds').setOrigin(0, 0)
     }
 
+    this.add.image(3232, 128, 'castle').setOrigin(0, 0)
+
     gameState.ground = this.physics.add.staticGroup()
     gameState.player = this.physics.add.sprite(50, 180, 'player')
     gameState.special = this.physics.add.staticGroup()
     gameState.brick = this.physics.add.staticGroup()
+    gameState.pipe = this.physics.add.staticGroup()
+    gameState.pyramid = this.physics.add.staticGroup()
 
     this.physics.add.collider(gameState.player, gameState.ground)
     
@@ -59,15 +69,14 @@ class Level extends Phaser.Scene {
 
     this.levelSetup()
 
-    this.cameras.main.setBounds(0, 0, 3312, 240)
-    this.physics.world.setBounds(0, 0, 3312, 240)
+    this.cameras.main.setBounds(0, 0, 3328, 240)
+    this.physics.world.setBounds(0, 0, 3328, 280)
+
     this.cameras.main.startFollow(gameState.player, true, 0.5, 0.5)
 
     gameState.player.setCollideWorldBounds(true)
 
     gameState.cursors = this.input.keyboard.createCursorKeys();
-
-    console.log(gameState)
   }
 
   createGround (xIndex, yIndex) {
@@ -93,7 +102,23 @@ class Level extends Phaser.Scene {
     .refreshBody()
   }
 
+  createPipe (xIndex, yIndex) {
+    gameState.special.create(xIndex, yIndex, 'pipe')
+    .setOrigin(0, 0)
+    .refreshBody()
+  }
+
+  createPyramid (xIndex, yIndex) {
+    gameState.pyramid.create(xIndex, yIndex, 'brick2')
+    .setOrigin(0, 0)
+    .refreshBody()
+  }
+
   levelSetup () {
+    for (const [i, pos] of this.pipe.entries()) {
+      this.createPipe(pos.x, pos.y)
+    }
+
     for (const [xIndex, yIndex] of this.ground.entries()) {
       this.createGround(xIndex, yIndex)
     }
@@ -105,6 +130,31 @@ class Level extends Phaser.Scene {
     for (const [i, pos] of this.special.entries()) {
       this.createSpecial(pos.x, pos.y)
     }
+
+    for (const [i, pos] of this.pyramid.entries()) {
+      if (pos.single) {
+        for (let i = 0; i < pos.col; i ++) {
+          this.createPyramid(pos.x, pos.y + i * 16)
+        }
+      }
+
+      if (!pos.reverse) {
+        for (let i = 0; i < pos.row; i ++) {
+          for (let j = 0; j <= i; j++) {
+            this.createPyramid((pos.x + i * 16),  pos.y - (j * 16))
+          }
+        }
+      } 
+      
+      if (pos.reverse) {
+        for (let i = 0; i < pos.row; i ++) {
+          for (let j = 0; j <= i; j++) {
+            this.createPyramid(pos.x + (j * 16), (pos.y + i * 16),  )
+          }
+        }
+      }
+    }
+
   }
 
   createAnimations () {
@@ -154,6 +204,10 @@ class Level extends Phaser.Scene {
 
     if (!gameState.player.body.touching.down) {
       gameState.player.anims.play('jump', true)
+    }
+
+    if (gameState.player.y > 260) {
+      this.scene.restart()
     }
   }
 }
